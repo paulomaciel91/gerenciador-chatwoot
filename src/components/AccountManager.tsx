@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { useStore } from '../store';
 import { ChatwootAccount } from '../types';
 import { getProfile } from '../api/chatwoot';
-import { Plus, Server, Trash2, CheckCircle, X, Loader2 } from 'lucide-react';
+import { Plus, Server, Trash2, CheckCircle, X, Loader2, Edit2, Save, Settings, Globe, Info } from 'lucide-react';
 
 const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#64748b'];
 
 export default function AccountManager() {
   const { accounts, activeAccountId, addAccount, removeAccount, setActiveAccount } = useStore();
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [token, setToken] = useState('');
@@ -16,12 +17,25 @@ export default function AccountManager() {
   const [color, setColor] = useState(COLORS[0]);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [showCorsSettings, setShowCorsSettings] = useState(false);
+  const [corsProxy, setCorsProxy] = useState(useStore.getState().corsProxy);
 
-  const handleAddAccount = async () => {
+  const resetForm = () => {
+    setName('');
+    setUrl('');
+    setToken('');
+    setAccountId('');
+    setColor(COLORS[Math.floor(Math.random() * COLORS.length)]);
+    setShowForm(false);
+    setEditingId(null);
+    setTestResult(null);
+  };
+
+  const handleSaveAccount = () => {
     if (!name || !url || !token || !accountId) return;
 
-    const newAccount: ChatwootAccount = {
-      id: Date.now().toString(),
+    const accountData: ChatwootAccount = {
+      id: editingId || Date.now().toString(),
       name,
       url: url.replace(/\/$/, ''),
       accessToken: token,
@@ -29,14 +43,26 @@ export default function AccountManager() {
       color,
     };
 
-    addAccount(newAccount);
-    setName('');
-    setUrl('');
-    setToken('');
-    setAccountId('');
-    setColor(COLORS[Math.floor(Math.random() * COLORS.length)]);
-    setShowForm(false);
-    setTestResult(null);
+    if (editingId) {
+      // Update existing account
+      useStore.setState((state) => ({
+        accounts: state.accounts.map((a) => (a.id === editingId ? accountData : a)),
+      }));
+    } else {
+      addAccount(accountData);
+    }
+
+    resetForm();
+  };
+
+  const handleEditAccount = (account: ChatwootAccount) => {
+    setEditingId(account.id);
+    setName(account.name);
+    setUrl(account.url);
+    setToken(account.accessToken);
+    setAccountId(account.accountId.toString());
+    setColor(account.color);
+    setShowForm(true);
   };
 
   const handleTestConnection = async () => {
@@ -55,7 +81,11 @@ export default function AccountManager() {
       const profile = await getProfile(tempAccount);
       setTestResult({ success: true, message: `Conectado como ${profile.name} (${profile.email})` });
     } catch (error: any) {
-      setTestResult({ success: false, message: error.message || 'Falha na conexão' });
+      let message = error.message || 'Falha na conexão';
+      if (message.includes('Failed to fetch') || message.includes('NetworkError')) {
+        message = 'Erro de CORS: Configure o Chatwoot para permitir requisições do navegador ou use um proxy CORS nas configurações.';
+      }
+      setTestResult({ success: false, message });
     }
     setTesting(false);
   };
@@ -67,18 +97,85 @@ export default function AccountManager() {
           <h2 className="text-2xl font-bold text-gray-900">Contas Chatwoot</h2>
           <p className="text-gray-500 mt-1">Gerencie suas conexões com instâncias do Chatwoot</p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          <Plus size={18} />
-          Nova Conta
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowCorsSettings(!showCorsSettings)}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Globe size={18} />
+            CORS Proxy
+          </button>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <Plus size={18} />
+            Nova Conta
+          </button>
+        </div>
       </div>
+
+      {/* CORS Proxy Settings */}
+      {showCorsSettings && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+          <div className="flex items-start gap-3">
+            <Info size={20} className="text-amber-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-amber-900 mb-2">Configuração de CORS Proxy</h3>
+              <p className="text-sm text-amber-800 mb-4">
+                Se você está recebendo erros de "Failed to fetch", é porque o Chatwoot não permite requisições CORS do navegador. 
+                Você tem duas opções:
+              </p>
+              <div className="space-y-3 mb-4">
+                <div className="bg-white rounded-lg p-3 border border-amber-100">
+                  <p className="font-medium text-sm text-gray-900 mb-1">Opção 1: Usar um Proxy CORS (recomendado para desenvolvimento)</p>
+                  <p className="text-xs text-gray-600">
+                    Configure um proxy como <code className="bg-gray-100 px-1 rounded">https://cors-anywhere.herokuapp.com</code> ou 
+                    crie seu próprio servidor proxy. O proxy deve aceitar a URL completa como parâmetro.
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg p-3 border border-amber-100">
+                  <p className="font-medium text-sm text-gray-900 mb-1">Opção 2: Configurar CORS no Chatwoot</p>
+                  <p className="text-xs text-gray-600">
+                    Adicione a URL deste aplicativo nas variáveis de ambiente do Chatwoot: <code className="bg-gray-100 px-1 rounded">FRONTEND_URL</code> ou 
+                    configure o Rack CORS no seu servidor.
+                  </p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-amber-900 mb-1">URL do Proxy CORS (deixe vazio para desativar)</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={corsProxy}
+                    onChange={(e) => setCorsProxy(e.target.value)}
+                    placeholder="https://seu-proxy-cors.com"
+                    className="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white"
+                  />
+                  <button
+                    onClick={() => {
+                      useStore.getState().setCorsProxy(corsProxy);
+                      setShowCorsSettings(false);
+                    }}
+                    className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+                  >
+                    Salvar
+                  </button>
+                </div>
+                {useStore.getState().corsProxy && (
+                  <p className="text-xs text-amber-700 mt-2">
+                    ✓ Proxy ativo: {useStore.getState().corsProxy}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Adicionar Nova Conta</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">{editingId ? 'Editar Conta' : 'Adicionar Nova Conta'}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Conta</label>
@@ -152,14 +249,15 @@ export default function AccountManager() {
               Testar Conexão
             </button>
             <button
-              onClick={handleAddAccount}
+              onClick={handleSaveAccount}
               disabled={!name || !url || !token || !accountId}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
             >
-              Adicionar Conta
+              {editingId ? <Save size={16} /> : <Plus size={16} />}
+              {editingId ? 'Salvar Alterações' : 'Adicionar Conta'}
             </button>
             <button
-              onClick={() => { setShowForm(false); setTestResult(null); }}
+              onClick={resetForm}
               className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Cancelar
@@ -198,12 +296,20 @@ export default function AccountManager() {
                   <p className="text-sm text-gray-500">{account.url}</p>
                 </div>
               </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); removeAccount(account.id); }}
-                className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-              >
-                <Trash2 size={16} />
-              </button>
+              <div className="flex gap-1">
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleEditAccount(account); }}
+                  className="p-1 text-gray-400 hover:text-indigo-500 transition-colors"
+                >
+                  <Edit2 size={16} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); removeAccount(account.id); }}
+                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
             <div className="mt-3 flex items-center gap-2">
               <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">

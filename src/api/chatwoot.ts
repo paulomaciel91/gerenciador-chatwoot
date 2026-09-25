@@ -1,16 +1,50 @@
 import { ChatwootAccount, ChatwootLabel, ChatwootCustomAttribute, ChatwootConversation, ChatwootInbox, ChatwootAgent } from '../types';
+import { useStore } from '../store';
+
+function buildUrl(account: ChatwootAccount, endpoint: string): string {
+  const baseUrl = `${account.url.replace(/\/$/, '')}/api/v1/accounts/${account.accountId}${endpoint}`;
+  const corsProxy = useStore.getState().corsProxy;
+  
+  if (corsProxy) {
+    // Proxy CORS: o proxy deve aceitar a URL completa como parâmetro
+    const proxyUrl = corsProxy.replace(/\/$/, '');
+    return `${proxyUrl}/${encodeURIComponent(baseUrl)}`;
+  }
+  
+  return baseUrl;
+}
+
+function buildProfileUrl(account: ChatwootAccount): string {
+  const baseUrl = `${account.url.replace(/\/$/, '')}/api/v1/profile`;
+  const corsProxy = useStore.getState().corsProxy;
+  
+  if (corsProxy) {
+    const proxyUrl = corsProxy.replace(/\/$/, '');
+    return `${proxyUrl}/${encodeURIComponent(baseUrl)}`;
+  }
+  
+  return baseUrl;
+}
 
 async function request<T>(account: ChatwootAccount, endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${account.url.replace(/\/$/, '')}/api/v1/accounts/${account.accountId}${endpoint}`;
+  const url = buildUrl(account, endpoint);
   
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'api_access_token': account.accessToken,
-      ...options.headers,
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'api_access_token': account.accessToken,
+        ...options.headers,
+      },
+    });
+  } catch (error: any) {
+    if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+      throw new Error('CORS_BLOCKED');
+    }
+    throw error;
+  }
 
   if (!response.ok) {
     const error = await response.text();
@@ -112,7 +146,7 @@ export async function getAgents(account: ChatwootAccount): Promise<ChatwootAgent
 
 // Profile
 export async function getProfile(account: ChatwootAccount): Promise<{ id: number; name: string; email: string; account_id: number }> {
-  const url = `${account.url.replace(/\/$/, '')}/api/v1/profile`;
+  const url = buildProfileUrl(account);
   const response = await fetch(url, {
     headers: {
       'Content-Type': 'application/json',

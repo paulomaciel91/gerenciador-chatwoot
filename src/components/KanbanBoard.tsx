@@ -3,6 +3,7 @@ import { useStore } from '../store';
 import { getConversations, updateConversation, toggleConversationStatus, getLabels, getInboxes, getAgents } from '../api/chatwoot';
 import { ChatwootConversation, ChatwootLabel, ChatwootInbox, ChatwootAgent } from '../types';
 import { Loader2, LayoutGrid, User, MessageSquare, Clock, Tag, ChevronDown, ExternalLink, GripVertical } from 'lucide-react';
+import { formatApiError } from '../utils/errors';
 
 const PRIORITY_COLORS: Record<string, string> = {
   urgent: 'bg-red-100 text-red-700',
@@ -61,7 +62,7 @@ export default function KanbanBoard() {
       setInboxes(inboxesData.payload || []);
       setAgents(agentsData);
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err));
     }
     setLoading(false);
   };
@@ -125,7 +126,7 @@ export default function KanbanBoard() {
       // Refresh
       await fetchAll();
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err));
     }
     setDraggedConv(null);
   };

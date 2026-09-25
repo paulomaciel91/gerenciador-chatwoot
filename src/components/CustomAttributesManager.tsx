@@ -3,6 +3,7 @@ import { useStore } from '../store';
 import { getCustomAttributes, createCustomAttribute, updateCustomAttribute, deleteCustomAttribute } from '../api/chatwoot';
 import { ChatwootCustomAttribute } from '../types';
 import { Plus, Edit2, Trash2, Check, Loader2, Settings2, X } from 'lucide-react';
+import { formatApiError } from '../utils/errors';
 
 const DISPLAY_TYPES: Record<number, string> = {
   0: 'Texto',
@@ -51,7 +52,7 @@ export default function CustomAttributesManager() {
       const data = await getCustomAttributes(account);
       setAttributes(data);
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err));
     }
     setLoading(false);
   };
@@ -63,7 +64,7 @@ export default function CustomAttributesManager() {
       setAttributes([...attributes, newAttr]);
       resetForm();
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err));
     }
   };
 
@@ -75,7 +76,7 @@ export default function CustomAttributesManager() {
       setEditingId(null);
       resetForm();
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err));
     }
   };
 
@@ -86,7 +87,7 @@ export default function CustomAttributesManager() {
       await deleteCustomAttribute(account, id);
       setAttributes(attributes.filter((a) => a.id !== id));
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err));
     }
   };
 

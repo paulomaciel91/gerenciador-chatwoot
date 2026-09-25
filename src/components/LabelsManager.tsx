@@ -3,6 +3,7 @@ import { useStore } from '../store';
 import { getLabels, createLabel, updateLabel, deleteLabel } from '../api/chatwoot';
 import { ChatwootLabel } from '../types';
 import { Plus, Edit2, Trash2, X, Check, Loader2, Tag } from 'lucide-react';
+import { formatApiError } from '../utils/errors';
 
 export default function LabelsManager() {
   const { getActiveAccount } = useStore();
@@ -26,7 +27,7 @@ export default function LabelsManager() {
       const data = await getLabels(account);
       setLabels(data);
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err));
     }
     setLoading(false);
   };
@@ -38,7 +39,7 @@ export default function LabelsManager() {
       setLabels([...labels, newLabel]);
       resetForm();
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err));
     }
   };
 
@@ -50,7 +51,7 @@ export default function LabelsManager() {
       setEditingId(null);
       resetForm();
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err));
     }
   };
 
@@ -61,7 +62,7 @@ export default function LabelsManager() {
       await deleteLabel(account, id);
       setLabels(labels.filter((l) => l.id !== id));
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err));
     }
   };
 
