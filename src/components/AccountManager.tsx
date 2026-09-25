@@ -123,51 +123,93 @@ export default function AccountManager() {
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-amber-900 mb-2">Configuração de CORS Proxy</h3>
               <p className="text-sm text-amber-800 mb-4">
-                Se você está recebendo erros de "Failed to fetch", é porque o Chatwoot não permite requisições CORS do navegador. 
-                Você tem duas opções:
+                Escolha uma das opções abaixo para resolver o erro de CORS:
               </p>
+              
               <div className="space-y-3 mb-4">
-                <div className="bg-white rounded-lg p-3 border border-amber-100">
-                  <p className="font-medium text-sm text-gray-900 mb-1">Opção 1: Usar um Proxy CORS (recomendado para desenvolvimento)</p>
-                  <p className="text-xs text-gray-600">
-                    Configure um proxy como <code className="bg-gray-100 px-1 rounded">https://cors-anywhere.herokuapp.com</code> ou 
-                    crie seu próprio servidor proxy. O proxy deve aceitar a URL completa como parâmetro.
+                <div className="bg-white rounded-lg p-4 border border-amber-100">
+                  <p className="font-medium text-sm text-gray-900 mb-2">🚀 Opção 1: Usar Proxy CORS Público (Mais Fácil)</p>
+                  <p className="text-xs text-gray-600 mb-3">
+                    Clique em um dos proxies abaixo para usar automaticamente:
                   </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <button
+                      onClick={() => {
+                        const proxy = 'https://api.allorigins.win/raw?url=';
+                        setCorsProxy(proxy);
+                        useStore.getState().setCorsProxy(proxy);
+                        setShowCorsSettings(false);
+                      }}
+                      className="text-left px-3 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded text-xs transition-colors"
+                    >
+                      <span className="font-medium text-blue-900">AllOrigins</span>
+                      <span className="block text-blue-700 mt-0.5">Gratuito e confiável</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const proxy = 'https://corsproxy.io/?';
+                        setCorsProxy(proxy);
+                        useStore.getState().setCorsProxy(proxy);
+                        setShowCorsSettings(false);
+                      }}
+                      className="text-left px-3 py-2 bg-green-50 hover:bg-green-100 border border-green-200 rounded text-xs transition-colors"
+                    >
+                      <span className="font-medium text-green-900">CORSProxy.io</span>
+                      <span className="block text-green-700 mt-0.5">Rápido e simples</span>
+                    </button>
+                  </div>
                 </div>
-                <div className="bg-white rounded-lg p-3 border border-amber-100">
-                  <p className="font-medium text-sm text-gray-900 mb-1">Opção 2: Configurar CORS no Chatwoot</p>
-                  <p className="text-xs text-gray-600">
-                    Adicione a URL deste aplicativo nas variáveis de ambiente do Chatwoot: <code className="bg-gray-100 px-1 rounded">FRONTEND_URL</code> ou 
-                    configure o Rack CORS no seu servidor.
+
+                <div className="bg-white rounded-lg p-4 border border-amber-100">
+                  <p className="font-medium text-sm text-gray-900 mb-2">⚙️ Opção 2: Proxy Personalizado</p>
+                  <p className="text-xs text-gray-600 mb-2">
+                    Se você tem seu próprio proxy CORS, insira a URL abaixo:
                   </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={corsProxy}
+                      onChange={(e) => setCorsProxy(e.target.value)}
+                      placeholder="https://seu-proxy.com/"
+                      className="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white text-sm"
+                    />
+                    <button
+                      onClick={() => {
+                        useStore.getState().setCorsProxy(corsProxy);
+                        setShowCorsSettings(false);
+                      }}
+                      className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors text-sm"
+                    >
+                      Usar
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-amber-900 mb-1">URL do Proxy CORS (deixe vazio para desativar)</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={corsProxy}
-                    onChange={(e) => setCorsProxy(e.target.value)}
-                    placeholder="https://seu-proxy-cors.com"
-                    className="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white"
-                  />
+
+                <div className="bg-white rounded-lg p-4 border border-amber-100">
+                  <p className="font-medium text-sm text-gray-900 mb-2">🚫 Desativar Proxy</p>
+                  <p className="text-xs text-gray-600 mb-2">
+                    Se você já configurou CORS no servidor Chatwoot ou não precisa mais do proxy:
+                  </p>
                   <button
                     onClick={() => {
-                      useStore.getState().setCorsProxy(corsProxy);
+                      setCorsProxy('');
+                      useStore.getState().setCorsProxy('');
                       setShowCorsSettings(false);
                     }}
-                    className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm"
                   >
-                    Salvar
+                    Desativar Proxy
                   </button>
                 </div>
-                {useStore.getState().corsProxy && (
-                  <p className="text-xs text-amber-700 mt-2">
-                    ✓ Proxy ativo: {useStore.getState().corsProxy}
-                  </p>
-                )}
               </div>
+
+              {useStore.getState().corsProxy && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-xs text-green-800">
+                    ✓ <strong>Proxy ativo:</strong> {useStore.getState().corsProxy}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -1,29 +1,35 @@
 import { ChatwootAccount, ChatwootLabel, ChatwootCustomAttribute, ChatwootConversation, ChatwootInbox, ChatwootAgent } from '../types';
 import { useStore } from '../store';
 
-function buildUrl(account: ChatwootAccount, endpoint: string): string {
-  const baseUrl = `${account.url.replace(/\/$/, '')}/api/v1/accounts/${account.accountId}${endpoint}`;
+function applyCorsProxy(baseUrl: string): string {
   const corsProxy = useStore.getState().corsProxy;
   
-  if (corsProxy) {
-    // Proxy CORS: o proxy deve aceitar a URL completa como parâmetro
-    const proxyUrl = corsProxy.replace(/\/$/, '');
-    return `${proxyUrl}/${encodeURIComponent(baseUrl)}`;
+  if (!corsProxy) return baseUrl;
+  
+  // Detecta o formato do proxy
+  if (corsProxy.includes('allorigins')) {
+    // AllOrigins: https://api.allorigins.win/raw?url=ENCODED
+    return `${corsProxy}${encodeURIComponent(baseUrl)}`;
   }
   
-  return baseUrl;
+  if (corsProxy.includes('corsproxy.io')) {
+    // CORSProxy.io: https://corsproxy.io/?ENCODED
+    return `${corsProxy}${encodeURIComponent(baseUrl)}`;
+  }
+  
+  // Proxy genérico: assume que aceita a URL como path
+  const proxyUrl = corsProxy.replace(/\/$/, '');
+  return `${proxyUrl}/${encodeURIComponent(baseUrl)}`;
+}
+
+function buildUrl(account: ChatwootAccount, endpoint: string): string {
+  const baseUrl = `${account.url.replace(/\/$/, '')}/api/v1/accounts/${account.accountId}${endpoint}`;
+  return applyCorsProxy(baseUrl);
 }
 
 function buildProfileUrl(account: ChatwootAccount): string {
   const baseUrl = `${account.url.replace(/\/$/, '')}/api/v1/profile`;
-  const corsProxy = useStore.getState().corsProxy;
-  
-  if (corsProxy) {
-    const proxyUrl = corsProxy.replace(/\/$/, '');
-    return `${proxyUrl}/${encodeURIComponent(baseUrl)}`;
-  }
-  
-  return baseUrl;
+  return applyCorsProxy(baseUrl);
 }
 
 async function request<T>(account: ChatwootAccount, endpoint: string, options: RequestInit = {}): Promise<T> {
