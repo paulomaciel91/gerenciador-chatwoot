@@ -21,13 +21,23 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { url, accountId, token, endpoint, method = 'GET', body } = req.body;
+    const { url, accountId, token, endpoint, method = 'GET', body, isProfile = false } = req.body;
     
-    if (!url || !accountId || !token || !endpoint) {
+    if (!url || !token || !endpoint) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const apiUrl = `${url}/api/v1/accounts/${accountId}${endpoint}`;
+    // Constrói a URL da API
+    let apiUrl;
+    if (isProfile) {
+      // Endpoint de profile não usa accountId
+      apiUrl = `${url}/api/v1/profile`;
+    } else {
+      if (!accountId) {
+        return res.status(400).json({ error: 'Missing accountId' });
+      }
+      apiUrl = `${url}/api/v1/accounts/${accountId}${endpoint}`;
+    }
     
     const options = {
       method,
@@ -44,9 +54,17 @@ export default async function handler(req, res) {
     const response = await fetch(apiUrl, options);
     const data = await response.text();
     
+    // Tenta fazer parse como JSON, se falhar retorna como texto
+    let parsedData;
+    try {
+      parsedData = data ? JSON.parse(data) : null;
+    } catch (e) {
+      parsedData = data;
+    }
+    
     res.status(response.status).json({
       status: response.status,
-      data: data ? JSON.parse(data) : null,
+      responseData: parsedData,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

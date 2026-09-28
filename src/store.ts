@@ -6,13 +6,11 @@ interface AppState {
   accounts: ChatwootAccount[];
   activeAccountId: string | null;
   currentView: ViewType;
-  corsProxy: string;
   
   addAccount: (account: ChatwootAccount) => void;
   removeAccount: (id: string) => void;
   setActiveAccount: (id: string | null) => void;
   setCurrentView: (view: ViewType) => void;
-  setCorsProxy: (proxy: string) => void;
   getActiveAccount: () => ChatwootAccount | null;
 }
 
@@ -22,7 +20,6 @@ export const useStore = create<AppState>()(
       accounts: [],
       activeAccountId: null,
       currentView: 'accounts',
-      corsProxy: '',
 
       addAccount: (account) =>
         set((state) => ({
@@ -38,8 +35,6 @@ export const useStore = create<AppState>()(
       setActiveAccount: (id) => set({ activeAccountId: id }),
 
       setCurrentView: (view) => set({ currentView: view }),
-
-      setCorsProxy: (proxy) => set({ corsProxy: proxy }),
 
       getActiveAccount: () => {
         const state = get();

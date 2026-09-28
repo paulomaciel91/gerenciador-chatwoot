@@ -52,9 +52,9 @@ export default function KanbanBoard() {
       ]);
       
       const allConvs: Record<string, ChatwootConversation[]> = {
-        open: openRes.data || [],
-        resolved: resolvedRes.data || [],
-        pending: pendingRes.data || [],
+        open: openRes.payload || [],
+        resolved: resolvedRes.payload || [],
+        pending: pendingRes.payload || [],
       };
       
       setConversations(allConvs);
