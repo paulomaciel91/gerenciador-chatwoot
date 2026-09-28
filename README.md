@@ -20,25 +20,54 @@ O projeto usa uma **Serverless Function** (`/api/chatwoot.js`) como proxy para t
 
 ## 🛠️ Instalação e Uso
 
-### Desenvolvimento Local
+### ⚠️ Importante: Preview Estático vs Deploy Completo
+
+O **preview estático** (que você está vendo agora) **NÃO executa serverless functions**. 
+Ele serve apenas o build estático do frontend, por isso aparece o erro "Proxy error: 500".
+
+Para usar o Chatwoot Manager, você precisa fazer o **deploy completo no Vercel**.
+
+### 🚀 Deploy no Vercel (Recomendado)
+
+**Opção 1: Deploy Direto (Mais Rápido)**
+```bash
+# Instale o Vercel CLI
+npm i -g vercel
+
+# Faça login
+vercel login
+
+# Deploy
+vercel
+
+# Deploy para produção
+vercel --prod
+```
+
+**Opção 2: Via GitHub (Automático)**
+1. Faça push deste projeto para o GitHub
+2. Acesse [vercel.com](https://vercel.com)
+3. Clique em "New Project"
+4. Importe o repositório
+5. Clique em "Deploy"
+6. Pronto! O proxy serverless vai funcionar automaticamente
+
+### 💻 Desenvolvimento Local
 
 ```bash
 # Instalar dependências
 npm install
 
-# Rodar com Vercel CLI (recomendado para testar serverless functions)
+# Opção 1: Usar Vercel CLI (recomendado)
 npm i -g vercel
 vercel dev
 
-# Ou rodar apenas o frontend
-npm run dev
+# Opção 2: Usar servidor local
+npm install express cors
+node server.js
 ```
 
-### Deploy no Vercel
-
-1. Conecte seu repositório ao Vercel
-2. Deploy automático (a pasta `/api` é detectada automaticamente)
-3. Pronto! O proxy serverless já estará funcionando
+O servidor local (`server.js`) roda o frontend + proxy em `http://localhost:3000`
 
 ## 🔒 Segurança
 

@@ -23,7 +23,10 @@ export default async function handler(req, res) {
   try {
     const { url, accountId, token, endpoint, method = 'GET', body, isProfile = false } = req.body;
     
+    console.log('Proxy request:', { url, accountId, endpoint, method, isProfile });
+    
     if (!url || !token || !endpoint) {
+      console.error('Missing required fields:', { url: !!url, token: !!token, endpoint: !!endpoint });
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -34,10 +37,13 @@ export default async function handler(req, res) {
       apiUrl = `${url}/api/v1/profile`;
     } else {
       if (!accountId) {
+        console.error('Missing accountId for non-profile request');
         return res.status(400).json({ error: 'Missing accountId' });
       }
       apiUrl = `${url}/api/v1/accounts/${accountId}${endpoint}`;
     }
+    
+    console.log('Calling Chatwoot API:', apiUrl);
     
     const options = {
       method,
@@ -54,11 +60,14 @@ export default async function handler(req, res) {
     const response = await fetch(apiUrl, options);
     const data = await response.text();
     
+    console.log('Chatwoot response status:', response.status);
+    
     // Tenta fazer parse como JSON, se falhar retorna como texto
     let parsedData;
     try {
       parsedData = data ? JSON.parse(data) : null;
     } catch (e) {
+      console.log('Response is not JSON, returning as text');
       parsedData = data;
     }
     
@@ -67,6 +76,10 @@ export default async function handler(req, res) {
       responseData: parsedData,
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Proxy error:', error);
+    res.status(500).json({ 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 }

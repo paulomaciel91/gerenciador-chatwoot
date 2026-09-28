@@ -5,6 +5,7 @@ import AccountManager from './components/AccountManager';
 import LabelsManager from './components/LabelsManager';
 import CustomAttributesManager from './components/CustomAttributesManager';
 import KanbanBoard from './components/KanbanBoard';
+import ProxyStatus from './components/ProxyStatus';
 
 function App() {
   const { currentView } = useStore();
@@ -28,6 +29,7 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       <Sidebar />
       <main className="ml-64 p-8">
+        <ProxyStatus />
         {renderContent()}
       </main>
     </div>
